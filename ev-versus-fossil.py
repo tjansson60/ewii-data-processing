@@ -6,19 +6,22 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import mplcursors
+
+CURRENCY = "kr"
 
 
-def price_l(km_l):
+def price_l(km_l, price_per_unit):
     """Pricing in DKK"""
-    _df = pd.DataFrame({"price/liter": np.arange(8, 20, 0.5)})
-    _df["price/km"] = _df["price/liter"] / km_l
+    _df = pd.DataFrame({"price/unit": price_per_unit})
+    _df["price/km"] = _df["price/unit"] / km_l
     return _df
 
 
-def price_kwh(km_k):
+def price_kwh(kwh_100km, price_per_unit):
     """Pricing in DKK"""
-    _df = pd.DataFrame({"price/kwh": np.arange(0.05, 10, 0.01)})
-    _df["price/km"] = _df["price/kwh"] / (km_k)
+    _df = pd.DataFrame({"price/unit": price_per_unit})
+    _df["price/km"] = _df["price/unit"] / (100 / kwh_100km)
     return _df
 
 
@@ -26,35 +29,31 @@ def create_plot_1():
     fig = plt.figure()
 
     # Get data
-    df_l = price_l(km_l)
-    df_k = price_kwh(km_k)
+    price_per_unit = np.arange(0, 6, 0.5)
+    df_l = price_l(km_l, price_per_unit)
+    df_k = price_kwh(kwh_100km, price_per_unit)
 
-    # km/l
+    # Plots
     ax1 = fig.add_subplot(111)
-    ax1.plot(df_l["price/km"], df_l["price/liter"], label="price/liter")
-    ax1.set_ylabel("Price/liter")
-    # ax1.set_ylim([0, None])
-
-    # km/kwh
-    ax2 = ax1.twinx()
-    ax2.plot(df_k["price/km"], df_k["price/kwh"], "r", label="price/kwh")
-    ax2.set_ylabel("Price/kWh")
-    # ax2.set_ylim([0, None])
+    ax1.plot(df_l["price/km"], df_l["price/unit"], label=f"Fossil")
+    ax1.plot(df_k["price/km"], df_l["price/unit"], label=f"Electric")
+    ax1.set_ylabel(f"{CURRENCY}/kWh or {CURRENCY}/l")
+    ax1.set_ylim([0, None])
 
     # Shared settings
-    ax1.set_title("Comparison of price/liter and price/kwh")
-    ax1.set_xlabel("Price/km")
-    ax2.set_xlim([0, 5.0])
-    ax1.grid()
+    ax1.set_title(f"Comparison of {CURRENCY}/liter and {CURRENCY}/kwh")
+    ax1.set_xlabel(f"{CURRENCY}/km")
     ax1.legend()
-    ax2.legend()
+    ax1.grid()
 
     # Create the plot
+    mplcursors.cursor(ax1, hover=True)
     st.pyplot(plt)
 
 
 # Create the sliders
-km_k = st.slider(label="km/kWh", value=3.5, min_value=1.0, max_value=15.0, step=0.5)
+# km_k = st.slider(label="km/kWh", value=3.5, min_value=1.0, max_value=15.0, step=0.5)
+kwh_100km = st.slider(label="kWh/100km", value=20.0, min_value=10.0, max_value=40.0, step=1.0)
 km_l = st.slider(label="km/liter", value=15.0, min_value=5.0, max_value=35.0, step=0.5)
 
 # Start values
